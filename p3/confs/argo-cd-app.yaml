@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoUrl: https://github.com/abelqasm/will-app.git
+    targhetRevision: HEAD
+    path: confs
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
