@@ -14,7 +14,7 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define "abelqasmW" do |worker|
-    worker.vm.hostname = "abelqasmW"
+    worker.vm.hostname = "abelqasmSW"
     worker.vm.network "private_network", ip: "192.168.56.111"
     worker.vm.provision "shell", path: "./scripts/worker_script.sh"
   end
