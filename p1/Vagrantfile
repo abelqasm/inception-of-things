@@ -1,0 +1,32 @@
+Vagrant.configure("2") do |config|
+    config.vm.box = "bento/ubuntu-22.04"
+    config.vm.boot_timeout = 600
+    config.vm.synced_folder "./confs", "/vagrant"
+
+    # Common configurations for all machines
+    config.vm.provider "virtualbox" do |vb|
+        vb.memory = 2048
+        vb.cpus = 2
+        vb.gui = false # Optional: not show the GUI
+    end
+
+    # Master node
+    config.vm.define "hlimouriS" do |master|
+        master.vm.hostname = "hlimouriS"
+        master.vm.network "private_network", ip: "192.168.56.110"
+        master.vm.provider "virtualbox" do |vb|
+            vb.name = "hlimouriS"
+        end
+        master.vm.provision "shell", path: "scripts/server.sh"
+    end
+
+    # Worker node 1
+    config.vm.define "hlimouriSW" do |worker1|
+        worker1.vm.hostname = "hlimouriSW"
+        worker1.vm.network "private_network", ip: "192.168.56.111"
+        worker1.vm.provider "virtualbox" do |vb|
+            vb.name = "hlimouriSW"
+        end
+        worker1.vm.provision "shell", path: "scripts/worker.sh"
+    end
+end
