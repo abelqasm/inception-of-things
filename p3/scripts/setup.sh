@@ -27,3 +27,4 @@ sleep 3
 
 echo "---------- Applying the Ingres ---------"
 kubectl apply -f ../confs/ingress.yaml
+kubectl apply -f ../confs/application.yaml
