@@ -21,7 +21,12 @@ kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubuse
 echo "---------- wait for argocd pods ---------"
 kubectl wait -n argocd --for=condition=Ready pods --all
 echo "---------- argocd is up and running ---------"
-sleep 3
+
+# remove argocd UI secure redirect
+kubectl patch configmap argocd-cmd-params-cm -n argocd --type merge -p '{"data":{"server.insecure":"true"}}'
+kubectl rollout restart deployment argocd-server -n argocd
+kubectl rollout status deployment argocd-server -n argocd
+
 
 # apply Ingress
 
