@@ -3,6 +3,9 @@ set -e
 
 echo "---------- Installing dependencies ----------"
 
+echo "---------- installing HELM ----------"
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
+
 # Install Homebrew if not present
 if ! command -v brew &>/dev/null; then
   echo "Installing Homebrew..."

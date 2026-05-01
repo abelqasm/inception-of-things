@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://gitlab.com/abelqasm/abelqasm-app.git
+    repoURL: https://github.com/abelqasm/abelqasm-app.git
     targetRevision: HEAD
     path: confs
   destination:
