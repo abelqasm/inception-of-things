@@ -8,8 +8,8 @@ sleep 10
 
 #  create namespaces
 echo "---------- Creating argocd and dev namespaces ---------"
-kubectl create namespace argocd
-kubectl create namespace dev
+kubectl create namespace argocd || true
+kubectl create namespace dev || true
 
 sleep 3
 
