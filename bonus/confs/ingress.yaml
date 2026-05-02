@@ -3,8 +3,6 @@ kind: Ingress
 metadata:
   name: argocd-ingress
   namespace: argocd
-  labels:
-    app: argocd
   annotations:
     ingress.kubernetes.io/ssl-redirect: "false"
 spec:

@@ -59,6 +59,13 @@ sleep 3
 echo ""
 curl http://localhost:8888/
 
+# Add this at the end of setup.sh, before the echo statements
+nohup bash -c 'while true; do
+  kubectl port-forward svc/playground-service -n dev 8888:8888 2>/dev/null
+  sleep 1
+done' > /tmp/playground-pf.log 2>&1 &
+echo "Auto-reconnecting port-forward started"
+
 echo ""
 echo "=========================================="
 echo "App:        http://localhost:8888"

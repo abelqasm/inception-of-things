@@ -1,12 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: abelqasm-app
+  name: bonus-app
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/abelqasm/abelqasm-app.git
+    repoURL: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/root/playground.git
     targetRevision: HEAD
     path: confs
   destination:
@@ -14,4 +14,5 @@ spec:
     namespace: dev
   syncPolicy:
     automated:
+      prune: true
       selfHeal: true

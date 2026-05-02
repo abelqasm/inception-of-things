@@ -1,0 +1,7 @@
+# Bonus runs natively on the host machine.
+# This Vagrantfile exists to match the subject's directory structure.
+# To use this project, run: cd scripts && ./install.sh && ./setup.sh
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-22.04"
+end

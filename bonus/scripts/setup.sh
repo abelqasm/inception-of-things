@@ -1,16 +1,42 @@
 #!/bin/bash
 set -e
-k3d cluster delete bonus
+
+echo "---------- Cleaning up ----------"
+pkill -f "port-forward" 2>/dev/null || true
+k3d cluster delete bonus 2>/dev/null || true
+
 echo "---------- Creating k3d cluster ----------"
 k3d cluster create bonus \
   -p "8888:80@loadbalancer" \
-  -p "8929:8929@loadbalancer" \
+  --k3s-arg "--disable=traefik@server:0" \
   --wait
 
 echo "---------- Creating namespaces ----------"
 kubectl create namespace argocd || true
 kubectl create namespace dev || true
 kubectl create namespace gitlab || true
+
+echo "---------- Installing GitLab via Helm ----------"
+helm repo add gitlab https://charts.gitlab.io/ 2>/dev/null || true
+helm repo update
+
+helm upgrade --install gitlab gitlab/gitlab \
+  --namespace gitlab \
+  --values ../confs/gitlab-values.yaml \
+  --timeout 15m
+
+echo "---------- GitLab Helm install initiated ----------"
+echo "Waiting for GitLab pods (this takes 8-12 minutes)..."
+
+# Wait for webservice to be ready
+until kubectl get pod -n gitlab -l app=webservice 2>/dev/null | grep -q "Running"; do
+  echo "  waiting for GitLab webservice..."
+  sleep 20
+done
+
+kubectl wait --for=condition=Ready pod \
+  -l app=webservice \
+  -n gitlab --timeout=600s
 
 echo "---------- Installing Argo CD ----------"
 kubectl apply -n argocd --server-side --force-conflicts \
@@ -26,40 +52,33 @@ kubectl patch configmap argocd-cmd-params-cm -n argocd \
 kubectl rollout restart deployment argocd-server -n argocd
 kubectl rollout status deployment argocd-server -n argocd
 
-echo "---------- Installing GitLab via Helm ----------"
-helm repo add gitlab https://charts.gitlab.io/ || true
-helm repo update
+echo "---------- Getting GitLab root password ----------"
+GITLAB_PASSWORD=$(kubectl get secret gitlab-gitlab-initial-root-password \
+  -n gitlab -o jsonpath='{.data.password}' | base64 -d)
 
-helm upgrade --install gitlab gitlab/gitlab \
-  --namespace gitlab \
-  --values ../confs/gitlab-values.yaml \
-  --timeout 10m \
-  --wait
-
-echo "---------- GitLab is up ----------"
-echo "Getting GitLab root password..."
-kubectl get secret gitlab-gitlab-initial-root-password \
-  -n gitlab \
-  -o jsonpath='{.data.password}' | base64 -d; echo
-
-echo "---------- Port-forwarding GitLab ----------"
+echo "---------- Port forwarding ----------"
 kubectl port-forward svc/gitlab-webservice-default \
-  -n gitlab 8181:8080 &
-PF_PID=$!
-echo "GitLab available at http://localhost:8181 (pid: $PF_PID)"
+  -n gitlab 8181:8181 &
+kubectl port-forward svc/argocd-server \
+  -n argocd 8080:80 &
+sleep 3
 
-sleep 5
-
-echo "---------- Applying ArgoCD Ingress ----------"
-kubectl apply -f ../confs/ingress.yaml
-
-echo "---------- Done ----------"
+echo ""
+echo "=========================================="
+echo "GitLab UI:    http://localhost:8181"
+echo "GitLab user:  root"
+echo "GitLab pass:  ${GITLAB_PASSWORD}"
+echo ""
+echo "ArgoCD UI:    http://localhost:8080"
+echo "ArgoCD pass:  kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
 echo ""
 echo "Next steps:"
-echo "1. Open http://localhost:8181 — login as root with password above"
-echo "2. Create a new project called 'playground'"
-echo "3. Push your manifests to it"
-echo "4. Run: kubectl apply -f ../confs/application.yaml"
-echo ""
-echo "ArgoCD UI: http://localhost:8888"
-echo "ArgoCD password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+echo "1. Open GitLab — login as root"
+echo "2. Create public project 'playground'"
+echo "3. Push manifests:"
+echo "   git remote add gitlab http://localhost:8181/root/playground.git"
+echo "   git push gitlab main"
+echo "4. kubectl apply -f ../confs/application.yaml"
+echo "5. kubectl port-forward svc/playground-service -n dev 8888:80 &"
+echo "6. curl http://localhost:8888/"
+echo "=========================================="
